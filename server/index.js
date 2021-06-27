@@ -1,28 +1,6 @@
-const { ApolloServer, gql } = require("apollo-server");
+const { ApolloServer } = require("apollo-server");
 const { PrismaClient } = require("@prisma/client");
-
-// A schema is a collection of type definitions (hence "typeDefs")
-// that together define the "shape" of queries that are executed against
-// your data.
-const typeDefs = gql`
-  # Comments in GraphQL strings (such as this one) start with the hash (#) symbol.
-
-  # This "Book" type defines the queryable fields for every book in our data source.
-  type Book {
-    title: String
-    author: String
-  }
-
-  # The "Query" type is special: it lists all of the available queries that
-  # clients can execute, along with the return type for each. In this
-  # case, the "books" query returns an array of zero or more Books (defined above).
-  type Query {
-    books: [Book]
-  }
-  type Mutation {
-    createBook(title: String, author: String): Book
-  }
-`;
+const { typeDefs } = require("./typeDefs.graphql");
 
 const books = [
   {
@@ -44,6 +22,13 @@ const resolvers = {
     books: async (parent, args, context) => {
       return context.prisma.book.findMany();
     },
+    book: async (parent, args, context) => {
+      return context.prisma.book.findUnique({
+        where: {
+          id: args.id,
+        },
+      });
+    },
   },
   Mutation: {
     createBook: async (parent, args, context) => {
@@ -55,6 +40,26 @@ const resolvers = {
         },
       });
       return newBook;
+    },
+    updateBook: async (parent, args, context) => {
+      const updatedBook = context.prisma.book.update({
+        where: {
+          id: args.id,
+        },
+        data: {
+          title: args.title,
+          author: args.author,
+        },
+      });
+      return updatedBook;
+    },
+    deleteBook: async (parent, args, context) => {
+      const deletedBook = context.prisma.book.delete({
+        where: {
+          id: args.id,
+        },
+      });
+      return deletedBook;
     },
   },
 };
